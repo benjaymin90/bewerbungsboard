@@ -16,7 +16,14 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    // Only run middleware on protected/authenticated routes.
+    // Public routes (/, /sign-in, /sign-up, /bewerben, static assets) are excluded
+    // so that missing Clerk env vars do not cause 500 errors on the landing page.
+    "/stellen(.*)",
+    "/templates(.*)",
+    "/einstellungen(.*)",
+    "/api/jobs(.*)",
+    "/api/templates(.*)",
+    "/api/webhooks(.*)",
   ],
 };
