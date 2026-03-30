@@ -7,15 +7,26 @@ datasource db {
   provider = "postgresql"
 }
 
-// --- Multi-Tenancy & Auth (Clerk) ---
+// --- Multi-Tenancy & Auth (local) ---
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime    @default(now())
+
+  memberships  OrgMember[]
+
+  @@map("users")
+}
 
 model Organization {
-  id         String   @id @default(cuid())
-  clerkOrgId String   @unique
-  name       String
-  plan       Plan     @default(FREE)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   jobs      Job[]
   templates EmailTemplate[]
@@ -25,15 +36,16 @@ model Organization {
 }
 
 model OrgMember {
-  id          String   @id @default(cuid())
-  clerkUserId String
-  orgId       String
-  role        OrgRole  @default(RECRUITER)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  orgId     String
+  role      OrgRole  @default(RECRUITER)
+  createdAt DateTime @default(now())
 
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  @@unique([clerkUserId, orgId])
+  @@unique([userId, orgId])
   @@map("org_members")
 }
 
@@ -141,7 +153,7 @@ model Document {
 model Note {
   id          String   @id @default(cuid())
   applicantId String
-  authorId    String   // Clerk user ID
+  authorId    String   // local User id (no FK for simplicity)
   authorName  String
   body        String   @db.Text
   createdAt   DateTime @default(now())

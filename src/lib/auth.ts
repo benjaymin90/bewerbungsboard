@@ -1,30 +1,26 @@
-import { auth } from "@clerk/nextjs/server";
-import { db } from "./db";
+import { getSession } from "./session";
 
 /**
- * Returns the current user's orgId (internal DB ID) after verifying
- * they are authenticated and have an active Clerk organization.
+ * Returns the current user's orgId (internal DB ID) after verifying they are authenticated.
  * Throws if not authenticated or no org selected.
  */
 export async function requireOrgId(): Promise<string> {
-  const { userId, orgId: clerkOrgId } = await auth();
+  const session = await getSession();
 
-  if (!userId) {
+  if (!session?.orgId) {
     throw new Error("Unauthorized");
   }
 
-  if (!clerkOrgId) {
-    throw new Error("No organization selected");
+  return session.orgId;
+}
+
+/**
+ * Returns the full session or throws if not authenticated.
+ */
+export async function requireSession() {
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Unauthorized");
   }
-
-  const org = await db.organization.findUnique({
-    where: { clerkOrgId },
-    select: { id: true },
-  });
-
-  if (!org) {
-    throw new Error("Organization not found");
-  }
-
-  return org.id;
+  return session;
 }

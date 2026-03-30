@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requireOrgId, requireSession } from "@/lib/auth";
 
 export async function GET(
   _request: NextRequest,
@@ -27,8 +26,7 @@ export async function POST(
   { params }: { params: Promise<{ applicantId: string }> }
 ) {
   try {
-    await requireOrgId();
-    const { userId } = await auth();
+    const session = await requireSession();
     const { applicantId } = await params;
     const { body } = await request.json();
 
@@ -42,8 +40,8 @@ export async function POST(
     const note = await db.note.create({
       data: {
         applicantId,
-        authorId: userId!,
-        authorName: "Recruiter",
+        authorId: session.userId,
+        authorName: session.name ?? session.email,
         body,
       },
     });
