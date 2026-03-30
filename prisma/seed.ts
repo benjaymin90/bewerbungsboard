@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import bcrypt from "bcryptjs";
 
 const adapter = new PrismaNeon({
   connectionString: process.env.DATABASE_URL!,
@@ -12,26 +13,38 @@ async function main() {
 
   // Create demo organization
   const org = await prisma.organization.upsert({
-    where: { clerkOrgId: "org_demo" },
+    where: { id: "seed-org-1" },
     update: {},
     create: {
-      clerkOrgId: "org_demo",
+      id: "seed-org-1",
       name: "Demo GmbH",
       plan: "PRO",
     },
   });
 
-  // Create demo member
+  // Create demo admin user
+  const passwordHash = await bcrypt.hash("demo1234", 12);
+  const user = await prisma.user.upsert({
+    where: { email: "demo@example.com" },
+    update: {},
+    create: {
+      email: "demo@example.com",
+      passwordHash,
+      name: "Demo Admin",
+    },
+  });
+
+  // Create org membership
   await prisma.orgMember.upsert({
     where: {
-      clerkUserId_orgId: {
-        clerkUserId: "user_demo",
+      userId_orgId: {
+        userId: user.id,
         orgId: org.id,
       },
     },
     update: {},
     create: {
-      clerkUserId: "user_demo",
+      userId: user.id,
       orgId: org.id,
       role: "ADMIN",
     },
